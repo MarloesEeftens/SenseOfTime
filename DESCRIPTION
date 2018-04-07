@@ -1,0 +1,17 @@
+Package: SenseOfTime
+Type: Package
+Title: Helps to make sense of time: straighten out messy time series data from real-time sensors and measurement instruments.
+Version: 1.0.0
+Author: Marloes Eeftens <marloes.eeftens@swisstph.ch>
+Maintainer: Marloes Eeftens <marloes.eeftens@swisstph.ch>
+Description: SenseOfTime deals with time series data and their streamlining for analysis, modelling and visualization.
+License: GNU GPLv3
+Depends: chron,
+  data.table,
+  dplyr,
+  foreign,
+  ggplot2, 
+  lubridate,
+  reshape2
+Encoding: UTF-8
+LazyData: true
