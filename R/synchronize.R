@@ -81,14 +81,10 @@ synchronize=function(basefile,syncfile,basevar,syncvar,timevar,log_scale=FALSE,p
   #6) Do the actual merge, shifting the syncfile by the optimal_shift:
   syncfile_rev<-syncfile
   syncfile_rev[[timevar]]<-syncfile_rev[[timevar]]-seconds(optimal_shift)
-  setkey(basefile[[timevar]])
-  setkey(syncfile[[timevar]])
-  synchronized_data<-syncfile_rev[basefile,roll="nearest",mult="first",rollends=c(FALSE,FALSE)]
-  synchronized_data2<-subset(synchronized_data,select=(c(1,dim(syncfile)[2]+1:(dim(basefile)[2]-1),2:dim(syncfile)[2])))
-  #synchronized_data2<-synchronized_data[,c(1,(dim(syncfile)[2]+1):(dim(basefile)[2]-1),2:(dim(syncfile)[2]))] ??? Better without subset
+  synchronized_data<-merge(basefile,syncfile_rev,by=timevar,all=TRUE)
   print(paste0("Time series syncfile was shifted by ",optimal_shift*-1," seconds, correlation between signals: ",signif(optimal_shift_cor,2)))
 
   #7) Return the results:
-  if(plot_stats==TRUE){return(list(synchronized_data2,plot1))}
-  if(plot_stats==FALSE){return(synchronized_data2)}
+  if(plot_stats==TRUE){return(list(synchronized_data,plot1))}
+  if(plot_stats==FALSE){return(synchronized_data)}
   }
