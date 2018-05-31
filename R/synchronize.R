@@ -58,19 +58,30 @@ synchronize=function(basefile,syncfile,basevar,syncvar,timevar,log_scale=FALSE,p
   #3) Find out which timeshift gives the optimal correlation:
   all_correlations_new<-rbindlist(lapply(all_correlations,FUN=function(x) x)) #Rbindlist is 10* faster than do.call
   optimal_shift<-all_correlations_new$shift[which.max(all_correlations_new$correlation)]
+  if(all(is.na(all_correlations_new$correlation))){
+    optimal_shift<-0
+    }
   optimal_shift_cor<-max(all_correlations_new$correlation)
 
   #4) Evaluate how likely it is that the optimal_shift is truly the optimum:
-  if(optimal_shift_cor<correlation_req|optimal_shift %in% head(all_correlations_new$shift)|optimal_shift %in% tail(all_correlations_new$shift)){
-    warning("Correlation between the signals suboptimal and/or below predefined requirement...\n
+  if(all(is.na(all_correlations_new$correlation))){
+    warning(paste0(
+      "The basefile starts at ",min(basefile2[[timevar]])," and finishes at ",max(basefile2[[timevar]]),". \n",
+      "The syncfile starts at ",min(syncfile2[[timevar]])," and finishes at ",max(syncfile2[[timevar]]),". \n",
+      "There is no overlap between the time series to base the synchronization on. Series will be merged with the original timestamp."))
+  }
+  if(!all(is.na(all_correlations_new$correlation))){
+    if(optimal_shift_cor<correlation_req|optimal_shift %in% head(all_correlations_new$shift)|optimal_shift %in% tail(all_correlations_new$shift)){
+      warning("Correlation between the signals suboptimal and/or below predefined requirement...\n
             Suggestions:\n
             - Specify plot_stats=TRUE to examine the plot\n
             - Widen the time interval over which the synchronize function looks for the best match\n
             - If you think the optimal shift was chosen correctly, set a less stringent correlation requirement to avoid this warning (the default is correlation_req=0.7)")
+    }
   }
 
   #5) Generate a plot of the correlation by time shift:
-  if(plot_stats==TRUE){
+  if(plot_stats==TRUE&!all(is.na(all_correlations_new$correlation))){
     plot1<-ggplot(data=all_correlations_new,aes(x=shift,y=correlation))+
       geom_line(aes(),color=grey(0.4))+
       geom_point(size=1.5)+
