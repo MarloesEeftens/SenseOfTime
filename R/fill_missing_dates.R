@@ -5,7 +5,7 @@ fill_missing_dates<-function(x,timevar,fake_date){
   if(all(gsub(" .*","",as.character(a))==fake_date)){stop("All dates missing, no filling possible")}
   while(any(gsub(" .*","",as.character(a))==fake_date)){
     #Working forwards:
-    for(i in 2:length(a)){print(i)
+    for(i in 2:length(a)){
       #Is record i missing with the previous record (i-1) available?
       if(gsub(" .*","",as.character(a[i]))==fake_date&gsub(" .*","",as.character(a[i-1]))!=fake_date){
         a[i]<-as.POSIXct(paste0(gsub(" .*","",as.character(a[i-1]))," ",gsub(".* ","",as.character(a[i]))))
@@ -16,7 +16,7 @@ fill_missing_dates<-function(x,timevar,fake_date){
       }
     }
     #Working backwards:
-    for(i in 1:(length(a)-1)){print(i)
+    for(i in 1:(length(a)-1)){
       #Is record i missing with the next record (i+1) available?
       if(gsub(" .*","",as.character(a[i]))==fake_date&gsub(" .*","",as.character(a[i+1]))!=fake_date){
         a[i]<-as.POSIXct(paste0(gsub(" .*","",as.character(a[i+1]))," ",gsub(".* ","",as.character(a[i]))))
