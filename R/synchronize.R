@@ -39,7 +39,14 @@ synchronize=function(basefile,syncfile,basevar,syncvar,timevar,log_scale=FALSE,p
     test_merge<-syncfile2[basefile2,roll="nearest",mult="first",rollends=c(FALSE,FALSE)]
     interval_seconds<-as.numeric(median(basefile2[[timevar]]-lag(basefile2[[timevar]],1),na.rm=TRUE),units="secs")
     for (k in seq(from=match_interval[1],to=match_interval[2])){
-      correlation<-cor(test_merge[[basevar]],shift_both_ways(test_merge[[syncvar]],k),use="pairwise.complete.obs")
+      test_merge_k<-as.data.frame(cbind(basevar=test_merge[[basevar]],
+                                        syncvar=shift_both_ways(test_merge[[syncvar]],k)))
+      test_merge_k<-test_merge_k[!is.na(test_merge_k$basevar)&!is.na(test_merge_k$syncvar),]
+      if(sd(test_merge_k[["basevar"]])==0|sd(test_merge_k[["syncvar"]])==0|dim(test_merge_k)[1]<2){
+        correlation<-NA
+      }else{
+        correlation<-cor(test_merge[[basevar]],shift_both_ways(test_merge[[syncvar]],k),use="pairwise.complete.obs")
+      }
       all_correlations[[k-min(match_interval)+1]]<-data.frame(correlation=correlation,shift=k*interval_seconds)
     }
   }
@@ -61,7 +68,7 @@ synchronize=function(basefile,syncfile,basevar,syncvar,timevar,log_scale=FALSE,p
   if(all(is.na(all_correlations_new$correlation))){
     optimal_shift<-0
     }
-  optimal_shift_cor<-max(all_correlations_new$correlation)
+  optimal_shift_cor<-max(all_correlations_new$correlation,na.rm=TRUE)
 
   #4) Evaluate how likely it is that the optimal_shift is truly the optimum:
   if(all(is.na(all_correlations_new$correlation))){
@@ -93,9 +100,27 @@ synchronize=function(basefile,syncfile,basevar,syncvar,timevar,log_scale=FALSE,p
   syncfile_rev<-syncfile
   syncfile_rev[[timevar]]<-syncfile_rev[[timevar]]-seconds(optimal_shift)
   synchronized_data<-merge(basefile,syncfile_rev,by=timevar,all=TRUE)
+
+  #Collapse all the .x and .y variables to their stem variable:
+  vars_to_collapse<-names(synchronized_data)[c(grep(".x$",names(synchronized_data)),grep(".y$",names(synchronized_data)))]
+  if(length(vars_to_collapse)>0){
+    for(m in 1:length(vars_to_collapse)){
+      goto_var<-gsub(c(".x$|.y$"),"",vars_to_collapse[m])
+      if(!goto_var %in% colnames(synchronized_data)){
+        names(synchronized_data)[which(names(synchronized_data)==vars_to_collapse[m])]<-goto_var
+      }else{
+        synchronized_data[[goto_var]]<-ifelse(is.na(synchronized_data[[goto_var]]),
+                                          synchronized_data[[vars_to_collapse[m]]],
+                                          synchronized_data[[goto_var]])
+        synchronized_data[[vars_to_collapse[m]]]<-NULL
+      }
+    }
+  }
+
   print(paste0("Time series syncfile was shifted by ",optimal_shift*-1," seconds, correlation between signals: ",signif(optimal_shift_cor,2)))
 
   #7) Return the results:
-  if(plot_stats==TRUE){return(list(synchronized_data,plot1))}
+  if(plot_stats==TRUE){return(list(synchronized_data,optimal_shift*-1,plot1))}
   if(plot_stats==FALSE){return(synchronized_data)}
   }
+
